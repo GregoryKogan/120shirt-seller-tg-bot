@@ -1,1 +1,2 @@
-BOT_TOKEN = "5532631504:AAEyhnIU-wQA1f54y9Xksyaa5KeYOpxFdiU"
+DB_URI = "bot_storage.db"
+BILL_LIFETIME = 10
