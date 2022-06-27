@@ -1,6 +1,7 @@
 import logging
 from telegram import (
     Update,
+    constants,
     InlineKeyboardButton,
     InlineKeyboardMarkup,
 )
@@ -21,11 +22,16 @@ logging.basicConfig(
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await context.bot.send_photo(
+        chat_id=update.effective_chat.id,
+        photo=open("src/assets/shirt-preview.jpg", "rb"),
+    )
     await context.bot.send_message(
         chat_id=update.effective_chat.id,
-        text="Привет! Это бот для демонстрации оплаты по QIWI",
+        text="Привет! Это бот для оформления предзаказа на футболку <b>120</b>",
+        parse_mode=constants.ParseMode.HTML,
         reply_markup=InlineKeyboardMarkup(
-            [[InlineKeyboardButton("Заплатить", callback_data="select_amount")]]
+            [[InlineKeyboardButton("Заказать", callback_data="select_amount")]]
         ),
     )
 
