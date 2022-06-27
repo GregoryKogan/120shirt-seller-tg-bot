@@ -1,6 +1,7 @@
 import sqlite3
 from sqlite3 import Error
 from config import DB_URI
+import datetime
 
 
 class DBCommunicator:
@@ -8,7 +9,6 @@ class DBCommunicator:
         self.connection = self.create_connection(f"./{DB_URI}")
         self.cursor = self.connection.cursor() if self.connection else None
 
-        self.users_table = UsersTable(self.connection)
         self.checks_table = ChecksTable(self.connection)
 
         self.create_tables()
@@ -36,55 +36,10 @@ class DBCommunicator:
         if not self.cursor:
             raise RuntimeError("No SQLite cursor available")
 
-        self.users_table.create_table()
         self.checks_table.create_table()
 
         self.connection.commit()
         print("All SQLite tables created successfully")
-
-
-class UsersTable:
-    def __init__(self, connection):
-        self.connection = connection
-        self.cursor = self.connection.cursor()
-
-    def create_table(self):
-        create_table_query = """
-        CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER NOT NULL UNIQUE,
-            money INTEGER NOT NULL DEFAULT 0
-        );"""
-
-        with self.connection:
-            self.cursor.execute(create_table_query)
-        print("SQLite 'users' table created")
-
-    def user_exists(self, user_id: int) -> bool:
-        with self.connection:
-            res = self.cursor.execute(
-                f"SELECT * FROM users WHERE user_id = {user_id}"
-            ).fetchall()
-        return bool(len(res))
-
-    def add_user(self, user_id: int):
-        with self.connection:
-            return self.cursor.execute(
-                f"INSERT INTO users (user_id) VALUES ({user_id})"
-            )
-
-    def user_get_money(self, user_id: int) -> int:
-        with self.connection:
-            res = self.cursor.execute(
-                f"SELECT money FROM users WHERE user_id = {user_id}"
-            ).fetchmany(1)
-        return int(res[0][0])
-
-    def user_set_money(self, user_id: int, amount: int):
-        with self.connection:
-            return self.cursor.execute(
-                f"UPDATE users SET money = {amount} WHERE user_id = {user_id}"
-            )
 
 
 class ChecksTable:
@@ -97,30 +52,53 @@ class ChecksTable:
         CREATE TABLE IF NOT EXISTS checks (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id INTEGER NOT NULL,
-            money INTEGER NOT NULL,
-            bill_id VARCHAR NOT NULL
+            amount REAL NOT NULL,
+            bill_id VARCHAR NOT NULL,
+            comment VARCHAR NOT NULL,
+            created_at VARCHAR NOT NULL,
+            status VARCHAR NOT NULL DEFAULT 'UNPAID'
         );"""
 
         with self.connection:
             self.cursor.execute(create_table_query)
         print("SQLite 'checks' table created")
 
-    def add_check(self, user_id: int, money: int, bill_id: str):
+    def add_check(self, user_id: int, amount: float, bill_id: str, comment: str):
+        created_at = datetime.datetime.now().isoformat()
         with self.connection:
             return self.cursor.execute(
-                "INSERT INTO checks (user_id, money, bill_id) VALUES (:user_id, :money, :bill_id)",
-                {"user_id": user_id, "money": money, "bill_id": bill_id},
+                """INSERT INTO checks (user_id, amount, bill_id, comment, created_at) 
+                VALUES (:user_id, :amount, :bill_id, :comment, :created_at)""",
+                {
+                    "user_id": user_id,
+                    "amount": amount,
+                    "bill_id": bill_id,
+                    "comment": comment,
+                    "created_at": created_at,
+                },
             )
 
-    def get_check(self, bill_id: str) -> bool:
+    def get_check(self, bill_id: str):
         with self.connection:
             res = self.cursor.execute(
                 "SELECT * FROM checks WHERE bill_id = :bill_id", {"bill_id": bill_id}
             ).fetchmany(1)
-        return None if len(res) == 0 else res[0]
+        return (
+            None
+            if len(res) == 0
+            else {
+                "user_id": res[0][1],
+                "amount": res[0][2],
+                "bill_id": res[0][3],
+                "comment": res[0][4],
+                "created_at": res[0][5],
+                "status": res[0][6],
+            }
+        )
 
-    def delete_check(self, bill_id: str):
+    def pay_check(self, bill_id):
         with self.connection:
             return self.cursor.execute(
-                "DELETE FROM checks WHERE bill_id = :bill_id", {"bill_id": bill_id}
+                "UPDATE checks SET status = 'PAID' WHERE bill_id = :bill_id",
+                {"bill_id": bill_id},
             )
