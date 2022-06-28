@@ -13,8 +13,10 @@ from telegram.ext import (
     CommandHandler,
     CallbackQueryHandler,
 )
-from payment.endpoints import select_amount, pay, check_payment
+from payment.endpoints import pay, check_payment
+from questionnaire.dialog import conv_handler
 from api_keys import BOT_TOKEN
+from db_communicator import db
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
@@ -22,6 +24,11 @@ logging.basicConfig(
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not db.users_table.exists(update.effective_user.id):
+        db.users_table.add_user(
+            update.effective_user.id, f"@{update.effective_user.username}"
+        )
+
     await context.bot.send_photo(
         chat_id=update.effective_chat.id,
         photo=open("src/assets/shirt-preview.jpg", "rb"),
@@ -31,7 +38,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         text="Привет! Это бот для оформления предзаказа на футболку <b>120</b>",
         parse_mode=constants.ParseMode.HTML,
         reply_markup=InlineKeyboardMarkup(
-            [[InlineKeyboardButton("Заказать", callback_data="select_amount")]]
+            [[InlineKeyboardButton("Заказать", callback_data="order")]]
         ),
     )
 
@@ -53,12 +60,10 @@ async def handle_callback_query(update: Update, context: ContextTypes.DEFAULT_TY
     query = update.callback_query
     await query.answer()
 
-    if query.data == "select_amount":
-        await select_amount(update=update, context=context)
-    elif query.data.startswith("pay"):
-        await pay(update=update, context=context, query_data=query.data)
+    if query.data.startswith("pay"):
+        await pay(update, context, query_data=query.data)
     elif query.data.startswith("check_payment"):
-        await check_payment(update=update, context=context, query_data=query.data)
+        await check_payment(update, context, query_data=query.data)
 
 
 if __name__ == "__main__":
@@ -70,8 +75,9 @@ if __name__ == "__main__":
     callback_query_handler = CallbackQueryHandler(handle_callback_query)
 
     application.add_handler(start_handler)
+    application.add_handler(conv_handler)
+    application.add_handler(callback_query_handler)
     application.add_handler(unknown_handler)
     application.add_handler(echo_handler)
-    application.add_handler(callback_query_handler)
 
     application.run_polling()

@@ -1,23 +1,13 @@
 from payment.keyboards import *
 from telegram import Update, constants
 from telegram.ext import ContextTypes
-from db_communicator import DBCommunicator
+from db_communicator import db
 from pyqiwip2p import AioQiwiP2P
 from config import BILL_LIFETIME
 from api_keys import QIWI_P2P_SECRET
 from payment.comment_gen import gen_comment
 
-
-db = DBCommunicator()
 p2p = AioQiwiP2P(auth_key=QIWI_P2P_SECRET)
-
-
-async def select_amount(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await context.bot.send_message(
-        chat_id=update.effective_chat.id,
-        text="Сколько рублей вы хотите заплатить?",
-        reply_markup=select_amount_keyboard(),
-    )
 
 
 async def pay(update: Update, context: ContextTypes.DEFAULT_TYPE, query_data: str):

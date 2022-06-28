@@ -1,16 +1,6 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
 
-def select_amount_keyboard():
-    return InlineKeyboardMarkup(
-        [
-            [InlineKeyboardButton("100", callback_data="pay 100")],
-            [InlineKeyboardButton("300", callback_data="pay 300")],
-            [InlineKeyboardButton("500", callback_data="pay 500")],
-        ]
-    )
-
-
 def pay_and_check_payment_keyboard(bill):
     return InlineKeyboardMarkup(
         [
