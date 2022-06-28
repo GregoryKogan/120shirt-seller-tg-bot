@@ -150,6 +150,10 @@ class UsersTable:
             }
         )
 
+    def get_all_users(self):
+        with self.connection:
+            return self.cursor.execute("SELECT * FROM users").fetchall()
+
 
 class ChecksTable:
     def __init__(self, connection):
@@ -211,6 +215,10 @@ class ChecksTable:
                 "UPDATE checks SET status = 'PAID' WHERE bill_id = :bill_id",
                 {"bill_id": bill_id},
             )
+
+    def get_all_checks(self):
+        with self.connection:
+            return self.cursor.execute("SELECT * FROM checks").fetchall()
 
 
 class SizesTable:
@@ -370,6 +378,10 @@ class OrdersTable:
                 for i in range(len(res))
             ]
         )
+
+    def get_all_orders(self):
+        with self.connection:
+            return self.cursor.execute("SELECT * FROM orders").fetchall()
 
 
 db = DBCommunicator()

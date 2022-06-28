@@ -74,12 +74,14 @@ if __name__ == "__main__":
 
     start_handler = CommandHandler("start", start)
     update_stock_handler = CommandHandler("stock", update_stock)
+    get_orders_handler = CommandHandler("orders", get_orders)
     unknown_handler = MessageHandler(filters.COMMAND, unknown)
     echo_handler = MessageHandler(filters.TEXT & (~filters.COMMAND), echo)
     callback_query_handler = CallbackQueryHandler(handle_callback_query)
 
     application.add_handler(start_handler)
     application.add_handler(update_stock_handler)
+    application.add_handler(get_orders_handler)
     application.add_handler(conv_handler)
     application.add_handler(callback_query_handler)
     application.add_handler(unknown_handler)

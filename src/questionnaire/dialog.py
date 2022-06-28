@@ -82,6 +82,8 @@ async def get_delivery_type(update, _):
         await update.message.reply_text("Укажите адрес доставки")
         return ADDRESS
     else:
+        db.users_table.update_user(update.effective_user.id, "address", None)
+        db.users_table.update_user(update.effective_user.id, "postcode", None)
         await update.message.reply_text(
             "Можете указать свой Instagram\n/skip если не хотите"
         )
