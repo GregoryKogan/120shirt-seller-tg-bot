@@ -50,7 +50,7 @@ async def get_size(update, _):
         return SIZE
 
     db.users_table.update_user(update.effective_user.id, "size_name", selected_size)
-    await update.message.reply_text("Как к вам обращаться?")
+    await update.message.reply_text("Укажите ваше Ф.И.О (для почтовой службы)")
     return NAME
 
 
@@ -79,7 +79,9 @@ async def get_delivery_type(update, _):
     del_type = "pickup" if update.message.text == "Самовывоз" else "courier"
     db.users_table.update_user(update.effective_user.id, "delivery_type", del_type)
     if del_type == "courier":
-        await update.message.reply_text("Укажите адрес доставки")
+        await update.message.reply_text(
+            "Укажите адрес доставки. Пример:\nГород, улица, дом, квартира"
+        )
         return ADDRESS
     else:
         db.users_table.update_user(update.effective_user.id, "address", None)
