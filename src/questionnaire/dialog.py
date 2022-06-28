@@ -9,7 +9,7 @@ from telegram.ext import (
     filters,
 )
 from db_communicator import db
-from questionnaire.data_preview import get_user_data_preview
+from questionnaire.data_preview import get_user_data_preview, get_check_data
 
 
 (
@@ -26,9 +26,13 @@ from questionnaire.data_preview import get_user_data_preview
 
 
 async def start_conversation(update, context):
+    size_stock_data = db.sizes_table.get_stock_data()
+    pretty_stock_data = "В наличии:\n"
+    for size_name in size_stock_data:
+        pretty_stock_data += f"{size_name}: {size_stock_data[size_name]}\n"
     await context.bot.send_message(
         chat_id=update.effective_chat.id,
-        text="Какой размер вам нужен?",
+        text=f"/cancel если хотите отменить заполнение данных\n\n{pretty_stock_data}\nКакой размер вам нужен?",
         reply_markup=select_size_keyboard(),
     )
 
@@ -36,9 +40,16 @@ async def start_conversation(update, context):
 
 
 async def get_size(update, _):
-    db.users_table.update_user(
-        update.effective_user.id, "size_name", update.message.text
-    )
+    size_stock_data = db.sizes_table.get_stock_data()
+    selected_size = update.message.text
+    if size_stock_data[selected_size] == 0:
+        await update.message.reply_text(
+            "К сожалению, этого размера нет в наличии. Можете выбрать другой.",
+            reply_markup=select_size_keyboard(),
+        )
+        return SIZE
+
+    db.users_table.update_user(update.effective_user.id, "size_name", selected_size)
     await update.message.reply_text("Как к вам обращаться?")
     return NAME
 
@@ -115,11 +126,19 @@ async def skip_instagram(update, _):
 
 async def get_verification(update, _):
     if update.message.text == "Все верно":
-        print("ORDER CREATED")
+        message, amount = get_check_data(update.effective_user.id)
+        await update.message.reply_text(
+            text=message,
+            reply_markup=go_to_payment(amount),
+        )
         return ConversationHandler.END
     else:
+        size_stock_data = db.sizes_table.get_stock_data()
+        pretty_stock_data = "В наличии:\n"
+        for size_name in size_stock_data:
+            pretty_stock_data += f"{size_name}: {size_stock_data[size_name]}\n"
         await update.message.reply_text(
-            text="Какой размер вам нужен?",
+            text=f"{pretty_stock_data}\nКакой размер вам нужен?",
             reply_markup=select_size_keyboard(),
         )
         return SIZE

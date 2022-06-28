@@ -24,3 +24,9 @@ def check_payment_keyboard(bill_id: str):
             ],
         ]
     )
+
+
+def buy_again_keyboard():
+    return InlineKeyboardMarkup(
+        [[InlineKeyboardButton("Заказать ещё", callback_data="order")]]
+    )

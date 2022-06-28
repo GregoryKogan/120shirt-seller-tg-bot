@@ -1,3 +1,7 @@
 DB_URI = "bot_storage.db"
 BILL_LIFETIME = 10
 SIZES = ["S", "M", "L", "XL"]
+SHIRT_PRICE = 100.00
+DELIVERY_PRICE = 50.00
+CONTACT_LINK = "@vityooook"
+ADMIN_IDS = [487961820, 544711957]

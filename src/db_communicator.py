@@ -18,6 +18,7 @@ class DBCommunicator:
         self.users_table = UsersTable(self.connection)
         self.checks_table = ChecksTable(self.connection)
         self.sizes_table = SizesTable(self.connection)
+        self.orders_table = OrdersTable(self.connection)
 
         self.create_tables()
 
@@ -46,6 +47,7 @@ class DBCommunicator:
         self.users_table.create_table()
         self.checks_table.create_table()
         self.sizes_table.create_table()
+        self.orders_table.create_table()
 
         self.connection.commit()
         logger.info("All SQLite tables created successfully")
@@ -266,6 +268,108 @@ class SizesTable:
                 "UPDATE sizes SET in_stock = :quantity WHERE size_name = :size_name",
                 {"quantity": quantity, "size_name": size_name},
             )
+
+    def decrease_quantity(self, bill_id: str):
+        orders_table = OrdersTable(self.connection)
+        order = orders_table.get_by_bill_id(bill_id)
+        if len(order) == 0:
+            return
+        size_name = order[0][6]
+        cur_quantity = self.get_stock_data()[size_name]
+        self.set_quantity(size_name, cur_quantity - 1)
+
+
+class OrdersTable:
+    def __init__(self, connection):
+        self.connection = connection
+        self.cursor = self.connection.cursor()
+
+    def create_table(self):
+        create_table_query = """
+        CREATE TABLE IF NOT EXISTS orders (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            telegram_username VARCHAR NOT NULL,
+            amount REAL NOT NULL,
+            bill_id VARCHAR NOT NULL,
+            created_at VARCHAR NOT NULL,
+            size_name VARCHAR NOT NULL,
+            name TEXT NOT NULL,
+            email VARCHAR NOT NULL,
+            phone VARCHAR NOT NULL,
+            delivery_type VARCHAR NOT NULL,
+            address TEXT,
+            postcode INTEGER,
+            instagram VARCHAR
+        );"""
+
+        with self.connection:
+            self.cursor.execute(create_table_query)
+        logger.info("SQLite 'orders' table created")
+
+    def exists(self, bill_id: str) -> bool:
+        with self.connection:
+            res = self.cursor.execute(
+                "SELECT * FROM orders WHERE bill_id = :bill_id", {"bill_id": bill_id}
+            ).fetchmany(1)
+        return len(res) != 0
+
+    def get_by_bill_id(self, bill_id: str):
+        with self.connection:
+            res = self.cursor.execute(
+                "SELECT * FROM orders WHERE bill_id = :bill_id", {"bill_id": bill_id}
+            ).fetchmany(1)
+        return res
+
+    def add_order(self, user_id: int, bill_id: str):
+        created_at = datetime.datetime.now().isoformat()
+        users_table = UsersTable(self.connection)
+        checks_table = ChecksTable(self.connection)
+        user_data = users_table.get(user_id)
+        check_data = checks_table.get_check(bill_id)
+        with self.connection:
+            return self.cursor.execute(
+                """INSERT INTO orders 
+                (user_id, telegram_username, amount, bill_id, created_at, size_name, name, email, phone, delivery_type, address, postcode, instagram) 
+                VALUES 
+                (:user_id, :telegram_username, :amount, :bill_id, :created_at, :size_name, :name, :email, :phone, :delivery_type, :address, :postcode, :instagram)""",
+                {
+                    "user_id": user_id,
+                    "telegram_username": user_data["telegram_username"],
+                    "amount": check_data["amount"],
+                    "bill_id": bill_id,
+                    "created_at": created_at,
+                    "size_name": user_data["size_name"],
+                    "name": user_data["name"],
+                    "email": user_data["email"],
+                    "phone": user_data["phone"],
+                    "delivery_type": user_data["delivery_type"],
+                    "address": user_data["address"],
+                    "postcode": user_data["postcode"],
+                    "instagram": user_data["instagram"],
+                },
+            )
+
+    def get_user_orders(self, user_id: int):
+        with self.connection:
+            res = self.cursor.execute(
+                "SELECT * FROM orders WHERE user_id = :user_id", {"user_id": user_id}
+            ).fetchall()
+        return (
+            None
+            if len(res) == 0
+            else [
+                {
+                    "size_name": res[i][6],
+                    "amount": res[i][3],
+                    "delivery_type": res[i][10],
+                    "address": res[i][11],
+                    "postcode": res[i][12],
+                    "phone": res[i][9],
+                }
+                for i in range(len(res))
+            ]
+        )
 
 
 db = DBCommunicator()

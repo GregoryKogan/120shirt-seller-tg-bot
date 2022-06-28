@@ -3,7 +3,7 @@ from telegram import Update, constants
 from telegram.ext import ContextTypes
 from db_communicator import db
 from pyqiwip2p import AioQiwiP2P
-from config import BILL_LIFETIME
+from config import BILL_LIFETIME, CONTACT_LINK
 from api_keys import QIWI_P2P_SECRET
 from payment.comment_gen import gen_comment
 
@@ -13,10 +13,10 @@ p2p = AioQiwiP2P(auth_key=QIWI_P2P_SECRET)
 async def pay(update: Update, context: ContextTypes.DEFAULT_TYPE, query_data: str):
     amount = 0
     try:
-        amount = int(query_data[len("pay ") :])
+        amount = float(query_data[len("pay ") :])
     except ValueError:
         await context.bot.send_message(
-            chat_id=update.effective_chat.id, text="Введите целое число"
+            chat_id=update.effective_chat.id, text="Введите число"
         )
         return
     if amount < 50:
@@ -53,17 +53,22 @@ async def check_payment(
     if bill_db_record["status"] == "PAID":
         await context.bot.send_message(
             chat_id=update.effective_chat.id,
-            text="Оплата прошла успешно!",
+            text=f"Оплата прошла успешно!\nМы с вами свяжемся. Если есть какие-либо вопросы, можете задать их нам: {CONTACT_LINK}",
+            reply_markup=buy_again_keyboard(),
         )
         return
 
     bill = await p2p.check(bill_id=bill_id)
 
     if bill.status == "PAID":
+        if not db.orders_table.exists(bill_id):
+            db.orders_table.add_order(update.effective_chat.id, bill_id)
         db.checks_table.pay_check(bill_id)
+        db.sizes_table.decrease_quantity(bill_id)
         await context.bot.send_message(
             chat_id=update.effective_chat.id,
-            text="Оплата прошла успешно!",
+            text=f"Оплата прошла успешно!\nМы с вами свяжемся. Если есть какие-либо вопросы, можете задать их нам: {CONTACT_LINK}",
+            reply_markup=buy_again_keyboard(),
         )
         return
     elif bill.status == "EXPIRED":

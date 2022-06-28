@@ -17,6 +17,7 @@ from payment.endpoints import pay, check_payment
 from questionnaire.dialog import conv_handler
 from api_keys import BOT_TOKEN
 from db_communicator import db
+from administration.admin_commands import *
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
@@ -70,11 +71,13 @@ if __name__ == "__main__":
     application = ApplicationBuilder().token(BOT_TOKEN).build()
 
     start_handler = CommandHandler("start", start)
+    update_stock_handler = CommandHandler("stock", update_stock)
     unknown_handler = MessageHandler(filters.COMMAND, unknown)
     echo_handler = MessageHandler(filters.TEXT & (~filters.COMMAND), echo)
     callback_query_handler = CallbackQueryHandler(handle_callback_query)
 
     application.add_handler(start_handler)
+    application.add_handler(update_stock_handler)
     application.add_handler(conv_handler)
     application.add_handler(callback_query_handler)
     application.add_handler(unknown_handler)

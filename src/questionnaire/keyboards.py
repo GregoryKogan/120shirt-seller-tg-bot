@@ -1,4 +1,9 @@
-from telegram import ReplyKeyboardMarkup, KeyboardButton
+from telegram import (
+    ReplyKeyboardMarkup,
+    KeyboardButton,
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
+)
 from config import SIZES
 
 
@@ -21,3 +26,8 @@ def verify_data_keyboard():
         [KeyboardButton("Заполнить данные заново")],
     ]
     return ReplyKeyboardMarkup(buttons, one_time_keyboard=True)
+
+
+def go_to_payment(amount: float):
+    buttons = [[InlineKeyboardButton("Оплатить", callback_data=f"pay {amount}")]]
+    return InlineKeyboardMarkup(buttons)
