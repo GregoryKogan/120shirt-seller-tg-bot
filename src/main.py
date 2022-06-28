@@ -13,7 +13,7 @@ from telegram.ext import (
     CommandHandler,
     CallbackQueryHandler,
 )
-from payment.endpoints import pay, check_payment
+from payment.endpoints import pay, check_payment, my_orders
 from questionnaire.dialog import conv_handler
 from api_keys import BOT_TOKEN
 from db_communicator import db
@@ -61,7 +61,9 @@ async def handle_callback_query(update: Update, context: ContextTypes.DEFAULT_TY
     query = update.callback_query
     await query.answer()
 
-    if query.data.startswith("pay"):
+    if query.data == "my_orders":
+        await my_orders(update, context)
+    elif query.data.startswith("pay"):
         await pay(update, context, query_data=query.data)
     elif query.data.startswith("check_payment"):
         await check_payment(update, context, query_data=query.data)

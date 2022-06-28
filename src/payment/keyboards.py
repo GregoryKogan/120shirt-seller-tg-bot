@@ -28,5 +28,8 @@ def check_payment_keyboard(bill_id: str):
 
 def buy_again_keyboard():
     return InlineKeyboardMarkup(
-        [[InlineKeyboardButton("Заказать ещё", callback_data="order")]]
+        [
+            [InlineKeyboardButton("Мои заказы", callback_data="my_orders")],
+            [InlineKeyboardButton("Заказать ещё", callback_data="order")],
+        ]
     )

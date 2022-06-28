@@ -83,3 +83,25 @@ async def check_payment(
             text="Чек не оплачен",
             reply_markup=check_payment_keyboard(bill_id),
         )
+
+
+async def my_orders(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    orders = db.orders_table.get_user_orders(update.effective_user.id)
+    pretty_orders = "Заказы: "
+    for order in orders:
+        pretty_orders += "\n\n-------------"
+        pretty_orders += f"\nРазмер: {order['size_name']}"
+        pretty_orders += f"\nТелефон: {order['phone']}"
+        if order["delivery_type"] == "courier":
+            pretty_orders += "\nТип доставки: курьером"
+        else:
+            pretty_orders += "\nТип доставки: самовывоз"
+        if order["delivery_type"] == "courier":
+            pretty_orders += f"\nАдрес: {order['address']}"
+            pretty_orders += f"\nПочтовый индекс: {order['postcode']}"
+        pretty_orders += f"\nИтого: {order['amount']}р."
+
+    await context.bot.send_message(
+        chat_id=update.effective_chat.id,
+        text=pretty_orders,
+    )
