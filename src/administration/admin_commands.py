@@ -1,3 +1,5 @@
+import datetime
+import json
 from telegram import Update
 from telegram.ext import ContextTypes
 from config import ADMIN_IDS, SIZES
@@ -53,3 +55,34 @@ async def get_orders(update: Update, context: ContextTypes.DEFAULT_TYPE):
         document=open("src/assets/SellData.xlsx", "rb"),
         filename="SellData.xlsx",
     )
+
+
+async def notify_owner_about_new_order(
+    update: Update, context: ContextTypes.DEFAULT_TYPE, user_id: int, bill_id: str
+):
+    created_at = datetime.datetime.now().isoformat()
+    user_data = db.users_table.get(user_id)
+    check_data = db.checks_table.get_check(bill_id)
+
+    new_order_data = {
+        "user_id": user_id,
+        "telegram_username": user_data["telegram_username"],
+        "amount": check_data["amount"],
+        "bill_id": bill_id,
+        "created_at": created_at,
+        "size_name": user_data["size_name"],
+        "name": user_data["name"],
+        "email": user_data["email"],
+        "phone": user_data["phone"],
+        "delivery_type": user_data["delivery_type"],
+        "address": user_data["address"],
+        "postcode": user_data["postcode"],
+        "instagram": user_data["instagram"],
+    }
+
+    pretty_data = json.dumps(new_order_data, indent=2, ensure_ascii=False)
+
+    for admin_id in ADMIN_IDS:
+        await context.bot.send_message(
+            chat_id=admin_id, text=f"Новый заказ!\n\n{pretty_data}"
+        )

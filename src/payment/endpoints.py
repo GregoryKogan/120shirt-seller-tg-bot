@@ -6,6 +6,7 @@ from pyqiwip2p import AioQiwiP2P
 from config import BILL_LIFETIME, CONTACT_LINK
 from api_keys import QIWI_P2P_SECRET
 from payment.comment_gen import gen_comment
+from administration.admin_commands import notify_owner_about_new_order
 
 p2p = AioQiwiP2P(auth_key=QIWI_P2P_SECRET)
 
@@ -63,6 +64,9 @@ async def check_payment(
     if bill.status == "PAID":
         if not db.orders_table.exists(bill_id):
             db.orders_table.add_order(update.effective_chat.id, bill_id)
+            await notify_owner_about_new_order(
+                update, context, update.effective_chat.id, bill_id
+            )
         db.checks_table.pay_check(bill_id)
         db.sizes_table.decrease_quantity(bill_id)
         await context.bot.send_message(
