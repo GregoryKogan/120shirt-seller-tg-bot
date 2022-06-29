@@ -49,6 +49,13 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 
+async def ping(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await context.bot.send_message(
+        chat_id=update.effective_chat.id,
+        text="pong!",
+    )
+
+
 async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(
         chat_id=update.effective_chat.id, text="Не понимаю вас..."
@@ -78,6 +85,7 @@ if __name__ == "__main__":
     application = ApplicationBuilder().token(BOT_TOKEN).build()
 
     start_handler = CommandHandler("start", start)
+    ping_handler = CommandHandler("ping", ping)
     update_stock_handler = CommandHandler("stock", update_stock)
     get_orders_handler = CommandHandler("orders", get_orders)
     unknown_handler = MessageHandler(filters.COMMAND, unknown)
@@ -85,6 +93,7 @@ if __name__ == "__main__":
     callback_query_handler = CallbackQueryHandler(handle_callback_query)
 
     application.add_handler(start_handler)
+    application.add_handler(ping_handler)
     application.add_handler(update_stock_handler)
     application.add_handler(get_orders_handler)
     application.add_handler(conv_handler)
