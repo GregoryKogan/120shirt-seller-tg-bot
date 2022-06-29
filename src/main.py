@@ -22,6 +22,7 @@ from administration.admin_commands import *
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
 )
+logger = logging.getLogger(__name__)
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -87,4 +88,8 @@ if __name__ == "__main__":
     application.add_handler(unknown_handler)
     application.add_handler(echo_handler)
 
-    application.run_polling()
+    while True:
+        try:
+            application.run_polling()
+        except Exception as e:
+            logger.error(e)
