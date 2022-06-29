@@ -35,13 +35,13 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             update.effective_user.id, f"@{update.effective_user.username}"
         )
 
-    await context.bot.send_photo(
+    await context.bot.send_document(
         chat_id=update.effective_chat.id,
-        photo=open("src/assets/shirt-preview.jpg", "rb"),
+        document=open("src/assets/siesta for a real man.png", "rb"),
     )
     await context.bot.send_message(
         chat_id=update.effective_chat.id,
-        text="Привет! Это бот для оформления предзаказа на футболку <b>120</b>",
+        text='<b>T-SHIRT "SIESTA FOR A REAL MAN"</b>\n\n- ткань: 100% хлопок, 230г плотность\n- шелкография\n- оверсайз\n\nУход:\n- стирать при 30° и наизнанку, отжим не выше 400',
         parse_mode=constants.ParseMode.HTML,
         reply_markup=InlineKeyboardMarkup(
             [[InlineKeyboardButton("Заказать", callback_data="order")]]

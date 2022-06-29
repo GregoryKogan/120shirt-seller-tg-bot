@@ -26,13 +26,19 @@ from questionnaire.data_preview import get_user_data_preview, get_check_data
 
 
 async def start_conversation(update, context):
+    await context.bot.send_message(
+        chat_id=update.effective_chat.id,
+        text='<b>S</b> - рост до 165см\n<b>M</b> - рост до 175см\n<b>L</b> - рост до 185см\n<b>XL</b> - рост от 185см\n\n*Это примерные показатели, если хотите быть настоящим "репером" можете брать на размер больше',
+        parse_mode=constants.ParseMode.HTML,
+    )
     size_stock_data = db.sizes_table.get_stock_data()
     pretty_stock_data = "В наличии:\n"
     for size_name in size_stock_data:
-        pretty_stock_data += f"{size_name}: {size_stock_data[size_name]}\n"
+        pretty_stock_data += f"{size_name}: {size_stock_data[size_name]}, "
+    pretty_stock_data = pretty_stock_data[:-2]
     await context.bot.send_message(
         chat_id=update.effective_chat.id,
-        text=f"/cancel если хотите отменить заполнение данных\n\n{pretty_stock_data}\nКакой размер вам нужен?",
+        text=f"/cancel если хотите отменить заполнение данных\n\n{pretty_stock_data}\n\nКакой размер вам нужен?",
         reply_markup=select_size_keyboard(),
     )
 
@@ -69,7 +75,7 @@ async def get_email(update, _):
 async def get_phone(update, _):
     db.users_table.update_user(update.effective_user.id, "phone", update.message.text)
     await update.message.reply_text(
-        "Выберите способ получения заказа\n- Самовывоз из (...)\n- Доставка по России (400 руб)",
+        "Выберите способ получения заказа\n- Самовывоз (метро Проспект Вернадского, с вами свяжутся ближе к делу)\n- Доставка по России (400 руб)",
         reply_markup=select_delivery_type_keyboard(),
     )
     return DELIVERY_TYPE
@@ -148,7 +154,10 @@ async def get_verification(update, _):
         return SIZE
 
 
-async def cancel(update, _):
+async def cancel(update, context):
+    await context.bot.send_message(
+        chat_id=update.effective_chat.id, text="Заполнение данных отменено"
+    )
     return ConversationHandler.END
 
 
