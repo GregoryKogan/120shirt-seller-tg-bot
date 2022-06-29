@@ -1,4 +1,5 @@
 import logging
+from time import sleep
 from telegram import (
     Update,
     constants,
@@ -20,7 +21,10 @@ from db_communicator import db
 from administration.admin_commands import *
 
 logging.basicConfig(
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
+    filename="logs.log",
+    encoding="utf-8",
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    level=logging.INFO,
 )
 logger = logging.getLogger(__name__)
 
@@ -93,3 +97,4 @@ if __name__ == "__main__":
             application.run_polling()
         except Exception as e:
             logger.error(e)
+            sleep(5)
