@@ -1,3 +1,4 @@
+import asyncio
 from payment.keyboards import *
 from telegram import Update, constants
 from telegram.ext import ContextTypes
@@ -33,10 +34,13 @@ async def pay(update: Update, context: ContextTypes.DEFAULT_TYPE, query_data: st
 
     await context.bot.send_message(
         chat_id=update.effective_chat.id,
-        text=f"Сформирован чек на оплату {bill.amount} рублей. Он будет действителен {BILL_LIFETIME} минут.\nОплатить можно по ссылке: {bill.pay_url}.\n\n<b>Убедитесь, что при оплате указан комментрий:</b>\n<code>{comment}</code>",
+        text=f"Сформирован чек на оплату {bill.amount} рублей. Он будет действителен {BILL_LIFETIME} минут.\nОплатить можно по ссылке: {bill.pay_url}.\n\n<b>Убедитесь, что при оплате указан комментрий:</b>\n<code>{comment}</code>\n\n<i>После платежа не забудьте проверить оплату</i>",
         parse_mode=constants.ParseMode.HTML,
         reply_markup=pay_and_check_payment_keyboard(bill),
     )
+
+    loop = asyncio.get_running_loop()
+    loop.create_task(delayed_check_payment(update, context, bill.bill_id))
 
 
 async def check_payment(
@@ -79,7 +83,15 @@ async def check_payment(
         await context.bot.send_message(
             chat_id=update.effective_chat.id,
             text="У чека закончился срок годности",
-            reply_markup=check_payment_keyboard(bill_id),
+            reply_markup=InlineKeyboardMarkup(
+                [
+                    [
+                        InlineKeyboardButton(
+                            "Сформировать новый чек", callback_data=f"pay {bill.amount}"
+                        )
+                    ]
+                ]
+            ),
         )
     else:
         await context.bot.send_message(
@@ -87,6 +99,15 @@ async def check_payment(
             text="Чек не оплачен",
             reply_markup=check_payment_keyboard(bill_id),
         )
+
+
+async def delayed_check_payment(update, context, bill_id):
+    await asyncio.sleep(BILL_LIFETIME * 60 + 180)
+    bill_db_record = db.checks_table.get_check(bill_id)
+    if bill_db_record["status"] == "PAID":
+        return
+
+    await check_payment(update, context, f"check_payment {bill_id}")
 
 
 async def my_orders(update: Update, context: ContextTypes.DEFAULT_TYPE):
