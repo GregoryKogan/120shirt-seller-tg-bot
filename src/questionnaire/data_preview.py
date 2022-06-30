@@ -27,10 +27,10 @@ def get_user_data_preview(user_id: int) -> str:
     return data
 
 
-def get_check_data(user_id: int) -> (str, float):
+def get_check_data(user_id: int) -> (str, float) or None:
     user_data = db.users_table.get(user_id)
     if user_data is None:
-        return ""
+        return None
 
     total_price = SHIRT_PRICE
     data = f"Футболка '120' - {SHIRT_PRICE}р."

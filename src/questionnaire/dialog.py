@@ -136,7 +136,10 @@ async def skip_instagram(update, _):
 
 async def get_verification(update, _):
     if update.message.text == "Все верно":
-        message, amount = get_check_data(update.effective_user.id)
+        check_data = get_check_data(update.effective_user.id)
+        if check_data is None:
+            return ConversationHandler.END
+        message, amount = check_data
         await update.message.reply_text(
             text=message,
             reply_markup=go_to_payment(amount),
